@@ -15,9 +15,15 @@ def test_CMSG_MESSAGECHAT():
 	assert packet.receiver is None
 	assert packet.text == 'bongour, brother'
 
+def test_SMSG_CHANNEL_NOTIFY():
+	data = b'\x00*\x99\x00\x02LocalDefense - Stormwind City\x00\x18\x16\x00\x00\x00\x00\x00\x00\x00'
+	data2 = b'\x00\x19\x99\x00\x02WorldDefense\x00\x18\x17\x00\x00\x00\x00\x00\x00\x00'
+
+	# packet = SMSG_CHANNEL_NOTIFY.parse(data)
+	# print(packet)
+
+
 	# SMSG_CHANNEL_NOTIFY:
-	# data = b'\x00*\x99\x00\x02LocalDefense - Stormwind City\x00\x18\x16\x00\x00\x00\x00\x00\x00\x00'
-	# data=b'\x00\x19\x99\x00\x02WorldDefense\x00\x18\x17\x00\x00\x00\x00\x00\x00\x00'
 
 # 2021-04-20 19:39:38.467 | PACKETS  | wlink.world.protocol:next_decrypted_packet:182 - header=Container(size=38, opcode=<Opcode.MSG_MOVE_TELEPORT_ACK: 199>)
 # 2021-04-20 19:39:38.467 | PACKETS  | wlink.world.protocol:next_decrypted_packet:187 - Listening for 36 byte body...

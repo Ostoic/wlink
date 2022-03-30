@@ -145,9 +145,9 @@ def make_CMSG_AUCTION_LIST_ITEMS(
 #     ClientServices::SendPacket_1(&data);
 
 AuctionEnchantmentInfo = construct.Struct(
-	'charges' / construct.Int32ul,
+	'id' / construct.Int32ul,
 	'duration' / construct.Int32ul,
-	'id' / construct.Int32ul
+	'charges' / construct.Int32ul,
 )
 
 AuctionInfo = construct.Struct(
@@ -162,7 +162,7 @@ AuctionInfo = construct.Struct(
 	'owner' / GuidConstruct(Guid),
 	'start_bid' / construct.Int32ul,
 	'buyout' / construct.Int32ul,
-	'time_left' / construct.Int32ul,
+	'time_left' / construct.Int32ul, # in milliseconds
 	'bidder' / GuidConstruct(Guid),
 	'bid' / construct.Int32ul
 )
@@ -174,6 +174,18 @@ SMSG_AUCTION_LIST_RESULT = construct.Struct(
 	'cooldown' / construct.Int32ul,
 	'auctions' / construct.Array(construct.this.count, AuctionInfo),
 )
+
+def make_SMSG_AUCTION_LIST_RESULT(count: int, total_count: int, cooldown: int = 300, auctions: list = []):
+	body_size = 4 + 4 + 4
+	for _ in range(len(auctions)):
+		body_size += AuctionInfo.sizeof()
+
+	return SMSG_AUCTION_LIST_RESULT.build(dict(
+		header=dict(size=2 + body_size),
+		count=count, total_count=total_count,
+		cooldown=cooldown,
+		auctions=auctions
+	))
 
 CMSG_AUCTION_LIST_OWNER_ITEMS = construct.Struct(
 	'header' / ClientHeader(Opcode.CMSG_AUCTION_LIST_OWNER_ITEMS, 8 + 4),

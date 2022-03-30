@@ -3,7 +3,7 @@ from enum import Enum
 import construct
 
 from wlink.utility.construct import PackEnum
-from .headers import ServerHeader
+from .headers import ServerHeader, is_large_server_packet
 from .opcode import Opcode
 
 class ServerMessageType(Enum):
@@ -24,6 +24,14 @@ SMSG_NOTIFICATION = construct.Struct(
 	'message' / construct.CString('ascii')
 )
 
+def make_SMSG_NOTIFICATION(message: str):
+	body_size = len(message) + 1
+	is_large = is_large_server_packet(body_size)
+	return SMSG_NOTIFICATION.build(dict(
+		header=dict(size=(3 if is_large else 2) + body_size),
+		message=message
+	))
+
 SMSG_MOTD = construct.Struct(
 	'header' / ServerHeader(Opcode.SMSG_MOTD, 4),
 	'lines' / construct.PrefixedArray(construct.Int32ul, construct.CString('ascii'))
@@ -43,5 +51,6 @@ def make_SMSG_MOTD(lines):
 	))
 
 __all__ = [
-	'SMSG_MOTD', 'SMSG_NOTIFICATION', 'SMSG_SERVER_MESSAGE', 'ServerMessageType', 'make_SMSG_MOTD'
+	'SMSG_MOTD', 'SMSG_NOTIFICATION', 'SMSG_SERVER_MESSAGE', 'ServerMessageType', 'make_SMSG_MOTD',
+	'make_SMSG_NOTIFICATION',
 ]

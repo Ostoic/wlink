@@ -5,7 +5,7 @@ import construct
 
 from wlink.utility.construct import GuidConstruct, PackEnum
 from wlink.world.packets.b12340.character_enum_packets import Gender, CombatClass
-from .headers import ServerHeader, ClientHeader
+from .headers import ServerHeader, ClientHeader, is_large_server_packet
 from .opcode import Opcode
 from wlink.guid import Guid
 
@@ -150,6 +150,14 @@ CMSG_GUILD_INVITE = construct.Struct(
 	'name' / construct.PaddedString(48, 'utf8'),
 )
 
+def make_CMSG_GUILD_INVITE(name: str):
+	body_size = construct.PaddedString(48, 'utf8').sizeof()
+	is_large = is_large_server_packet(body_size)
+	return CMSG_GUILD_INVITE.build(dict(
+		header=dict(size=(3 if is_large else 2) + body_size),
+		name=name
+	))
+
 SMSG_GUILD_INVITE = construct.Struct(
 	'header' / ServerHeader(Opcode.SMSG_GUILD_INVITE, 10),
 	'sender' / construct.CString('utf8'),
@@ -201,6 +209,18 @@ SMSG_GUILD_EVENT = construct.Struct(
 		}
 	)
 )
+
+def make_SMSG_GUILD_EVENT(type: GuildEventType, parameters: list, guid: Guid):
+	body_size = 1 + 1
+	for parameter in parameters:
+		body_size += len(parameter) + 1
+
+	body_size += 8
+	return SMSG_GUILD_EVENT.build(dict(
+		header=dict(size=2 + body_size),
+		type=type, parameters=parameters,
+		guid=guid
+	))
 
 CMSG_GUILD_QUERY = construct.Struct(
 	'header' / ClientHeader(Opcode.CMSG_GUILD_QUERY, 4),
@@ -320,5 +340,6 @@ __all__ = [
 	'CMSG_GUILD_SET_PUBLIC_NOTE', 'CMSG_GUILD_SET_OFFICER_NOTE', 'SMSG_GUILD_EVENT', 'SMSG_GUILD_EVENT_LOG_QUERY',
 	'SMSG_GUILD_INFO', 'SMSG_GUILD_INVITE', 'SMSG_GUILD_ROSTER', 'SMSG_GUILD_COMMAND_RESULT',
 	'SMSG_GUILD_QUERY_RESPONSE', 'GuildEventType', 'GuildMemberDataType', 'GuildCommandType', 'GuildBankRightsData',
-	'GuildRankData', 'GuildBankData', 'RosterMemberData', 'GuildCommandError', 'MemberStatus'
+	'GuildRankData', 'GuildBankData', 'RosterMemberData', 'GuildCommandError', 'MemberStatus', 'make_CMSG_GUILD_INVITE',
+	'make_SMSG_GUILD_EVENT', 'make_SMSG_GUILD_QUERY_RESPONSE',
 ]

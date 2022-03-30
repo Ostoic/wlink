@@ -26,7 +26,7 @@ class WorldClientProtocol(WorldProtocol):
 
 	def decrypt_packet(self, data: bytes):
 		start = self.crypto.decrypt(bytes([data[0]]))
-		body_start = 5 if is_large_server_packet(start) else 4
+		body_start = 6
 		rest = self.crypto.decrypt(data[1:body_start])
 		return (start + rest) + data[body_start:]
 
@@ -48,7 +48,7 @@ class WorldServerProtocol(WorldProtocol):
 			size=header.size
 		))
 
-		body_start = 5 if is_large_server_packet(header) else 4
+		body_start = 5 if is_large_server_packet(data) else 4
 		return self.crypto.encrypt(packed_header) + data[body_start:]
 
 	def decrypt_packet(self, data: bytes):

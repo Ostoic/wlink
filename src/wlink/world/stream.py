@@ -84,15 +84,6 @@ class WorldClientStream(WorldStream):
 	def __init__(self, stream: trio.abc.HalfCloseableStream, session_key: int):
 		super().__init__(stream, WorldClientProtocol(session_key))
 
-	def decrypt_packet(self, data: bytes):
-		start = self.protocol.crypto.decrypt(bytes([data[0]]))
-		body_start = 5 if headers.is_large_server_packet(start) else 4
-		rest = self.protocol.crypto.decrypt(data[1:body_start])
-		return (start + rest) + data[body_start:]
-
-	def encrypt_packet(self, data: bytes, header):
-		return self.protocol.crypto.encrypt(data[0:6]) + data[6:]
-
 	async def next_decrypted_packet(self):
 		# Receive header first
 		original_data = await self._receive_some(max_bytes=4)
@@ -151,22 +142,6 @@ class WorldClientStream(WorldStream):
 class WorldServerStream(WorldStream):
 	def __init__(self, stream: trio.abc.HalfCloseableStream, session_key: int):
 		super().__init__(stream, WorldServerProtocol(session_key))
-
-	def encrypt_packet(self, data: bytes, header):
-		packed_header = ServerHeader().build(dict(
-			opcode=header.opcode,
-			size=header.size
-		))
-
-		body_start = 5 if headers.is_large_server_packet(header) else 4
-		logger.debug(f'{data[:body_start]=} {packed_header=}')
-		return self.protocol.crypto.encrypt(packed_header) + data[body_start:]
-
-	def decrypt_packet(self, data: bytes):
-		if data is None or len(data) == 0:
-			return None
-
-		return self.protocol.crypto.decrypt(data[:6]) + data[6:]
 
 	async def next_decrypted_packet(self):
 		# Receive header first
